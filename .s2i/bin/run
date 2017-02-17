@@ -1,0 +1,36 @@
+#!/bin/sh
+set -x
+
+
+#AVAILABLE PARAMETERS - All paramters are optional although some need to be coordinated if used
+#SOLR_CONF_URL = The url to where the solr properties are archived
+#SOLR_CONF_DESTINATION = The directory where the solr properties will exist with the image
+#COMPRESSED_ARCHIVE_URL = The url to where the tarred archive is located
+#COMPRESSED_ARCHIVE_HOME = The directory where the archived will be located on the image
+#COMPRESSED_ARCHIVE_DESTINATION = The directory where the archive will be untarred
+
+
+
+  SOLR_CONF_DIR=${JBOSS_HOME}/conf
+
+  if [ -n "${SOLR_CONF_DESTINATION}" ]; then
+    SOLR_CONF_DIR="${SOLR_CONF_DESTINATION}"
+  fi
+
+  mkdir "${SOLR_CONF_DIR}"
+  chmod 777 "${SOLR_CONF_DIR}"
+  chown 1001:1001 "${SOLR_CONF_DIR}"
+  
+  head -1 ${SOLR_CONF_DIR}/solrcore.properties > /tmp/src/new_props.properties
+  tail -n +2 /tmp/src/apollo.properties >>  /tmp/src/new_props.properties
+  cp /tmp/src/new_props.properties ${SOLR_CONF_DIR}/solrcore.properties
+  
+  chmod a+w ${SOLR_CONF_DIR}/solrcore.properties
+
+if [ -n "${COMPRESSED_ARCHIVE_URL}" ] && [ -n "${COMPRESSED_ARCHIVE_HOME}" ]; then
+  curl -v ${COMPRESSED_ARCHIVE_URL} -o ${COMPRESSED_ARCHIVE_DESTINATION}
+  tar -xvf ${COMPRESSED_ARCHIVE_DESTINATION} --directory ${COMPRESSED_ARCHIVE_HOME}
+fi
+
+exec $JBOSS_HOME/bin/openshift-launch.sh
+
